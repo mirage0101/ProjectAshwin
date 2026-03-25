@@ -1,15 +1,21 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PortalLayout from '../layouts/PortalLayout';
 import PageHeader from '../components/PageHeader';
-import { assignMarketingCase, getEmployees, getMarketingCases } from '../services/portalStore';
+import { assignMarketingCase, getEmployees, getMarketingCases, getTeamMembers } from '../services/portalStore';
 import { getEmployerRole, getSession } from '../services/session';
 
 export default function MarketingPage() {
   const navigate = useNavigate();
   const employerRole = getEmployerRole();
   const session = getSession();
-  const cases = getMarketingCases();
-  const employees = getEmployees();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const cases = useMemo(() => getMarketingCases(), [refreshKey]);
+  const employees = useMemo(() => getEmployees(), [refreshKey]);
+  const recruiters = getTeamMembers()
+    .filter((member) => member.entity === session.entity && ['Recruiter', 'Lead Recruiter'].includes(member.role) && member.status !== 'Inactive')
+    .map((member) => member.name);
+  const [assignmentDrafts, setAssignmentDrafts] = useState({});
 
   const queueRows = employees.filter((emp) => String(emp.status).startsWith('BENCH')).map((emp) => {
     const caseRow = cases.find((row) => String(row.employeeId) === String(emp.id));
@@ -26,9 +32,12 @@ export default function MarketingPage() {
     };
   });
 
-  const assignToSelf = (row) => {
-    if (row.caseId) assignMarketingCase(row.caseId, session.name);
-    navigate(row.caseId ? `/employer/marketing/${row.caseId}` : '/employer/marketing');
+  const canManageAssignments = ['lead_recruiter', 'admin', 'superadmin'].includes(employerRole);
+
+  const assignToRecruiter = (row, recruiterName) => {
+    if (!row.caseId || !recruiterName) return;
+    assignMarketingCase(row.caseId, recruiterName);
+    setRefreshKey((value) => value + 1);
   };
 
   return (
@@ -36,14 +45,14 @@ export default function MarketingPage() {
       <PageHeader
         eyebrow="Recruiter phase"
         title="Marketing"
-        description="Shared queue visible to recruiters inside the entity. No top-level create action here. Recruiters assign an employee to themselves, then create submissions inside the marketing detail page."
+        description="Compact marketing queue for bench employees. Lead Recruiter can assign or reassign ownership, while recruiters work the tracker inside each employee marketing detail."
       />
 
-      <div className="table-wrap card">
-        <table>
+      <div className="table-wrap card compact-table-card">
+        <table className="tracker-table">
           <thead>
             <tr>
-              <th>Employee</th><th>Status</th><th>Assigned Recruiter</th><th>Bench Start</th><th>Skills</th><th>Queue Visibility</th><th>Action</th>
+              <th>Employee</th><th>Status</th><th>Recruiter</th><th>Bench Start</th><th>Skills</th><th>Queue</th><th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -51,20 +60,33 @@ export default function MarketingPage() {
               <tr key={row.employeeId}>
                 <td><strong>{row.name}</strong><div className="subtle">{row.summary}</div></td>
                 <td><span className={`status-pill ${row.queueStatus === 'Assigned' ? 'status-pending' : 'status-active'}`}>{row.status}</span></td>
-                <td>{row.recruiter || 'Open / Unassigned'}</td>
-                <td>{row.benchStart || '—'}</td>
+                <td>
+                  {canManageAssignments ? (
+                    <div className="compact-inline-grid">
+                      <select
+                        className="compact-width"
+                        value={assignmentDrafts[row.employeeId] ?? row.recruiter}
+                        onChange={(e) => setAssignmentDrafts((prev) => ({ ...prev, [row.employeeId]: e.target.value }))}
+                      >
+                        <option value="">Open / Unassigned</option>
+                        {recruiters.map((item) => <option key={item}>{item}</option>)}
+                      </select>
+                      <button className="button button-secondary slim-button" onClick={() => assignToRecruiter(row, assignmentDrafts[row.employeeId] ?? row.recruiter)}>
+                        {row.recruiter ? 'Reassign' : 'Assign'}
+                      </button>
+                    </div>
+                  ) : (
+                    row.recruiter || 'Open / Unassigned'
+                  )}
+                </td>
+                <td>{row.benchStart || 'N/A'}</td>
                 <td>{row.skills || 'Pending profile'}</td>
-                <td>{row.queueStatus === 'Assigned' ? 'Visible to all, details locked to owner + admin' : 'Visible to all recruiters'}</td>
+                <td>{row.queueStatus === 'Assigned' ? 'Owned tracker' : 'Shared queue'}</td>
                 <td>
                   {row.caseId ? (
-                    <div className="inline-actions">
-                      {(!row.recruiter || row.recruiter === session.name || employerRole === 'admin' || employerRole === 'superadmin' || employerRole === 'lead_recruiter') && (
-                        <button className="button button-secondary slim-button" onClick={() => navigate(`/employer/marketing/${row.caseId}`)}>
-                          {row.recruiter ? 'Open Detail' : 'Assign & Open'}
-                        </button>
-                      )}
-                      {!row.recruiter && <button className="button slim-button" onClick={() => assignToSelf(row)}>Assign to Me</button>}
-                    </div>
+                    <button className="button button-secondary slim-button" onClick={() => navigate(`/employer/marketing/${row.caseId}`)}>
+                      Open Tracker
+                    </button>
                   ) : (
                     <span className="subtle">No case record yet</span>
                   )}

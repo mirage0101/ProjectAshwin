@@ -354,9 +354,6 @@ export const approvalItems = {
     { id: 'APR-2001', employee: 'Rahul Sharma', entity: 'GxP Consulting', detail: 'Passport, Visa, ID Proof', stage: 'Document Review', priority: 'High' },
     { id: 'APR-2002', employee: 'Emily Carter', entity: 'GxP Consulting', detail: 'Offer acknowledgement', stage: 'Offer Review', priority: 'Low' },
   ],
-  payroll: [
-    { id: 'APR-4001', employee: 'GxP Consulting Batch', entity: 'GxP Consulting', detail: 'ADP handoff packet', stage: 'Admin Review', priority: 'High' },
-  ],
 };
 
 export const employeeTasks = [

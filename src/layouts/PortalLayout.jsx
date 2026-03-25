@@ -38,14 +38,12 @@ const employerMenusByRole = {
     ['clients', 'Clients & Vendors', '/employer/clients'],
     ['employees', 'Employee', '/employer/employees'],
     ['payroll', 'Marketing', '/employer/marketing'],
-    ['approvals', 'Approvals', '/employer/approvals'],
   ],
   recruiter: [
     ['dashboard', 'Home / Overview', '/employer'],
     ['clients', 'Clients & Vendors', '/employer/clients'],
     ['employees', 'Employee', '/employer/employees'],
     ['payroll', 'Marketing', '/employer/marketing'],
-    ['approvals', 'Approvals', '/employer/approvals'],
   ],
   hr: [
     ['dashboard', 'Home / Overview', '/employer'],

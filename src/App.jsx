@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardOverview from './pages/DashboardOverview';
 import OnboardingPage from './pages/OnboardingPage';
 import TimesheetPage from './pages/TimesheetPage';
+import TimesheetDetailPage from './pages/TimesheetDetailPage';
 import DocumentsPage from './pages/DocumentsPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
@@ -21,6 +22,7 @@ import PayPage from './pages/PayPage';
 import OrgPage from './pages/OrgPage';
 import MarketingPage from './pages/MarketingPage';
 import MarketingDetailPage from './pages/MarketingDetailPage';
+import OnboardingDetailPage from './pages/OnboardingDetailPage';
 import TeamPage from './pages/TeamPage';
 
 function App() {
@@ -43,7 +45,9 @@ function App() {
       <Route path="/employer" element={<DashboardOverview role="employer" />} />
       <Route path="/employer/team" element={<TeamPage />} />
       <Route path="/employer/onboarding" element={<OnboardingPage role="employer" />} />
+      <Route path="/employer/onboarding/:id" element={<OnboardingDetailPage />} />
       <Route path="/employer/timesheets" element={<TimesheetPage role="employer" />} />
+      <Route path="/employer/timesheets/:id" element={<TimesheetDetailPage />} />
       <Route path="/employer/documents" element={<DocumentsPage role="employer" />} />
       <Route path="/employer/profile" element={<ProfilePage role="employer" />} />
       <Route path="/employer/notifications" element={<NotificationsPage role="employer" />} />

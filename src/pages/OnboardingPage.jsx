@@ -1,11 +1,15 @@
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PortalLayout from '../layouts/PortalLayout';
 import PageHeader from '../components/PageHeader';
 import { employeeTasks } from '../services/mockData';
-import { getOnboardingCases } from '../services/portalStore';
+import { getClients, getDocuments, getOnboardingCases } from '../services/portalStore';
 
 export default function OnboardingPage({ role }) {
+  const navigate = useNavigate();
   const isEmployer = role === 'employer';
-  const rows = getOnboardingCases();
+  const rows = useMemo(() => getOnboardingCases(), []);
+  const clients = getClients();
 
   return (
     <PortalLayout role={role}>
@@ -13,36 +17,44 @@ export default function OnboardingPage({ role }) {
         eyebrow={isEmployer ? 'HR phase' : 'Employee task center'}
         title={isEmployer ? 'Onboarding' : 'Tasks'}
         description={isEmployer
-          ? 'This page is for HR-owned post-marketing onboarding only: request employee documents, upload client docs, and issue offer letter acknowledgment.'
+          ? 'HR-owned onboarding queue in compact table form. Open a case to request docs, upload client artifacts, generate offer files, and review history.'
           : 'Structured tasks requested by HR and Admin, including onboarding documents and offer acknowledgment.'}
       />
 
       {isEmployer ? (
-        <div className="approval-list">
-          {rows.map((item) => (
-            <div key={item.id} className="card approval-item">
-              <div className="approval-item-head">
-                <div>
-                  <strong>{item.employee}</strong>
-                  <p>{item.client} • {item.vendorPath}</p>
-                </div>
-                <div className="inline-actions">
-                  <span className="badge">{item.state}</span>
-                  <span className="badge">{item.hr}</span>
-                </div>
-              </div>
-              <div className="simple-grid employee-detail-grid compact-tiles" style={{ marginTop: '1rem' }}>
-                <div className="card info-card"><div className="subtle">Requested Docs</div><strong>{item.docsRequested.join(', ')}</strong></div>
-                <div className="card info-card"><div className="subtle">Assignment End</div><strong>{item.assignmentEnd}</strong></div>
-                <div className="card info-card"><div className="subtle">Task Count</div><strong>{item.taskCount}</strong></div>
-              </div>
-              <div className="inline-actions" style={{ marginTop: '.85rem' }}>
-                <button className="button button-secondary">Request Docs</button>
-                <button className="button button-secondary">Upload Client Docs</button>
-                <button className="button">Generate Offer PDF</button>
-              </div>
-            </div>
-          ))}
+        <div className="table-wrap card compact-table-card">
+          <table className="tracker-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Client</th>
+                <th>State</th>
+                <th>HR</th>
+                <th>Requested Docs</th>
+                <th>Assignment End</th>
+                <th>Client Docs</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((item) => {
+                const client = clients.find((entry) => entry.name === item.client);
+                const clientDocCount = client ? getDocuments('client', client.id).length : 0;
+                return (
+                  <tr key={item.id}>
+                    <td><strong>{item.employee}</strong><div className="subtle">{item.vendorPath}</div></td>
+                    <td>{item.client}</td>
+                    <td><span className={`status-pill ${item.state.includes('Pending') ? 'status-pending' : item.state.includes('Generated') ? 'status-active' : 'status-active'}`}>{item.state}</span></td>
+                    <td>{item.hr}</td>
+                    <td>{item.docsRequested.length}</td>
+                    <td>{item.assignmentEnd}</td>
+                    <td>{clientDocCount}</td>
+                    <td><button className="button button-secondary slim-button" onClick={() => navigate(`/employer/onboarding/${item.id}`)}>Open Case</button></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="stack-list">
